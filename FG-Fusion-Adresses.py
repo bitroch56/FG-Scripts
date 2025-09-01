@@ -1,13 +1,13 @@
 import os
 import sys
 
-# Fichiers d'entrée et de sortie
+# Fichiers d'entree et de sortie
 FICHIER_CONF_1 = "conf_1.txt"
 FICHIER_CONF_2 = "conf_2.txt"
 FICHIER_FUSIONNE = "liste_fusionnee.txt"
 
-# Types de sections supportées
-SECTIONS_SUPPORTÉES = [
+# Types de sections supportees
+SECTIONS_SUPPORTEES = [
     "config firewall address",
     "config firewall multicast-address",
     "config firewall address6",
@@ -17,13 +17,13 @@ SECTIONS_SUPPORTÉES = [
 ]
 
 # Fonction de lecture des sections pour en extraire les adresses/informations utiles
-def lire_sections_fortigate(chemin_fichier, sections_demandées):
+def lire_sections_fortigate(chemin_fichier, sections_demandees):
     """
-    Lit un fichier FortiGate et extrait les objets d'adresses pour les sections demandées.
+    Lit un fichier FortiGate et extrait les objets d'adresses pour les sections demandees.
     Ignore les champs 'uuid'.
     Retourne un dictionnaire {section: liste d'objets}.
     """
-    objets = {section: [] for section in sections_demandées}
+    objets = {section: [] for section in sections_demandees}
     try:
         with open(chemin_fichier, 'r') as f:
             lignes = f.readlines()
@@ -33,8 +33,8 @@ def lire_sections_fortigate(chemin_fichier, sections_demandées):
         while i < len(lignes):
             ligne = lignes[i].strip()
 
-            # Détection du début d'une section pertinente
-            if ligne in sections_demandées:
+            # Detection du debut d'une section pertinente
+            if ligne in sections_demandees:
                 section_active = ligne
                 i += 1
                 continue
@@ -68,21 +68,21 @@ def lire_sections_fortigate(chemin_fichier, sections_demandées):
             i += 1
 
     except FileNotFoundError:
-        print(f"Erreur : Le fichier '{chemin_fichier}' n'a pas été trouvé.")
+        print(f"Erreur : Le fichier '{chemin_fichier}' n'a pas ete trouve.")
     except Exception as e:
         print(f"Erreur lors de la lecture de '{chemin_fichier}' : {e}")
 
     return objets
 
-# Fonction d'écriture des sections pour y retranscrire une fusion entre deux fichiers de config
+# Fonction d'ecriture des sections pour y retranscrire une fusion entre deux fichiers de config
 def ecrire_sections_fortigate(chemin_fichier, objets_par_section):
     """
-    Écrit les objets FortiGate dans un fichier de configuration FortiGate,
+    ecrit les objets FortiGate dans un fichier de configuration FortiGate,
     en respectant l'ordre et la structure des sections.
     """
     try:
         with open(chemin_fichier, 'w') as f:
-            for section in SECTIONS_SUPPORTÉES:
+            for section in SECTIONS_SUPPORTeES:
                 if section in objets_par_section and objets_par_section[section]:
                     f.write(f"{section}\n")
                     for obj in objets_par_section[section]:
@@ -92,32 +92,32 @@ def ecrire_sections_fortigate(chemin_fichier, objets_par_section):
                                 f.write(f"        set {k} \"{v}\"\n")
                         f.write("    next\n")
                     f.write("end\n\n")
-        print(f"La liste fusionnée a été enregistrée dans '{chemin_fichier}'.")
+        print(f"La liste fusionnee a ete enregistree dans '{chemin_fichier}'.")
     except Exception as e:
-        print(f"Erreur lors de l'écriture du fichier '{chemin_fichier}' : {e}")
+        print(f"Erreur lors de l'ecriture du fichier '{chemin_fichier}' : {e}")
 
-# Fonction de fusion des objets provenant de deux fichiers, avec priorité à conf_2 (conf_2)
+# Fonction de fusion des objets provenant de deux fichiers, avec priorite à conf_2 (conf_2)
 def fusionner_sections(objets_conf_1, objets_conf_2):
     """
-    Fusionne deux dictionnaires contenant les objets FortiGate extraits de fichiers différents.
-    En cas de doublon de nom dans une même section, l'objet de 'objets_conf_2' (conf_2) est conservé.
-    Retourne le résultat de la fusion ET un dict des doublons par section.
+    Fusionne deux dictionnaires contenant les objets FortiGate extraits de fichiers differents.
+    En cas de doublon de nom dans une même section, l'objet de 'objets_conf_2' (conf_2) est conserve.
+    Retourne le resultat de la fusion ET un dict des doublons par section.
     """
     fusion = {}
     doublons = {}
-    for section in SECTIONS_SUPPORTÉES:
+    for section in SECTIONS_SUPPORTeES:
         fusion[section] = {}
         conf_1_objs = {obj['name']: obj for obj in objets_conf_1.get(section, [])}
         conf_2_objs = {obj['name']: obj for obj in objets_conf_2.get(section, [])}
 
         # Ajouter les objets conf_1
         fusion[section].update(conf_1_objs)
-        # Ajouter/écraser par les objets conf_2
+        # Ajouter/ecraser par les objets conf_2
         doublons_section = set()
         for name, obj in conf_2_objs.items():
             if name in fusion[section]:
-                print(f"{COLOR_YELLOW}Avertissement : L'objet '{name}' est présent dans conf_1 et conf_2 ({section}). "
-                      f"Celui de conf_2 sera conservé.{COLOR_RESET}")
+                print(f"{COLOR_YELLOW}Avertissement : L'objet '{name}' est present dans conf_1 et conf_2 ({section}). "
+                      f"Celui de conf_2 sera conserve.{COLOR_RESET}")
                 doublons_section.add(name)
             fusion[section][name] = obj
         doublons[section] = doublons_section
@@ -128,23 +128,23 @@ def fusionner_sections(objets_conf_1, objets_conf_2):
 # Fonction interactive pour demander à l'utilisateur quelles sections il souhaite traiter
 def demander_sections():
     """
-    Affiche une liste des sections supportées et permet à l'utilisateur d'en sélectionner plusieurs.
+    Affiche une liste des sections supportees et permet à l'utilisateur d'en selectionner plusieurs.
     Retourne une liste des sections choisies.
     """
     print("Sections disponibles :")
-    for idx, section in enumerate(SECTIONS_SUPPORTÉES, 1):
+    for idx, section in enumerate(SECTIONS_SUPPORTeES, 1):
         print(f"{idx}. {section}")
-    choix = input("Entrez les numéros des sections à inclure, séparés par des virgules (ex: 1,3,6): ")
+    choix = input("Entrez les numeros des sections à inclure, separes par des virgules (ex: 1,3,6): ")
     try:
         indices = [int(i.strip()) for i in choix.split(',')]
-        return [SECTIONS_SUPPORTÉES[i - 1] for i in indices if 0 < i <= len(SECTIONS_SUPPORTÉES)]
+        return [SECTIONS_SUPPORTeES[i - 1] for i in indices if 0 < i <= len(SECTIONS_SUPPORTeES)]
     except:
-        print("Entrée invalide. Toutes les sections seront sélectionnées.")
-        return SECTIONS_SUPPORTÉES
+        print("Entree invalide. Toutes les sections seront selectionnees.")
+        return SECTIONS_SUPPORTeES
 
-# Ajout de couleurs ANSI pour Windows (si supporté)
+# Ajout de couleurs ANSI pour Windows (si supporte)
 if os.name == 'nt':
-    os.system('')  # Active les séquences ANSI sur Windows 10+
+    os.system('')  # Active les sequences ANSI sur Windows 10+
 
 COLOR_RESET = "\033[0m"
 COLOR_GREEN = "\033[92m"
@@ -152,10 +152,10 @@ COLOR_YELLOW = "\033[93m"
 COLOR_BLUE = "\033[94m"
 COLOR_MAGENTA = "\033[95m"
 
-# Fonction pour afficher les objets fusionnés sous forme de tableau
-def afficher_tableau(objets_fusionnés, sections_demandées, max_lignes=50):
+# Fonction pour afficher les objets fusionnes sous forme de tableau
+def afficher_tableau(objets_fusionnes, sections_demandees, max_lignes=50):
     """
-    Affiche les objets fusionnés sous forme de tableau pour chaque section sélectionnée.
+    Affiche les objets fusionnes sous forme de tableau pour chaque section selectionnee.
     Utilise tabulate si disponible, sinon fallback sur affichage manuel.
     """
     try:
@@ -164,15 +164,15 @@ def afficher_tableau(objets_fusionnés, sections_demandées, max_lignes=50):
     except ImportError:
         tabulate_dispo = False
 
-    for section in sections_demandées:
-        objets = objets_fusionnés.get(section, [])
+    for section in sections_demandees:
+        objets = objets_fusionnes.get(section, [])
         if not objets:
             continue
         print(f"\n{COLOR_BLUE}╔════════════════════════════════════════════════════════════════════╗{COLOR_RESET}")
         print(f"{COLOR_BLUE}║ Section : {section:<56}║{COLOR_RESET}")
         print(f"{COLOR_BLUE}╚════════════════════════════════════════════════════════════════════╝{COLOR_RESET}")
 
-        # Déterminer tous les attributs présents dans cette section
+        # Determiner tous les attributs presents dans cette section
         attributs = set()
         for obj in objets:
             attributs.update(obj.keys())
@@ -190,7 +190,7 @@ def afficher_tableau(objets_fusionnés, sections_demandées, max_lignes=50):
                 table.append(row)
             print(tabulate(table, headers=headers, tablefmt="fancy_grid", stralign="left", numalign="left", maxcolwidths=40))
         else:
-            # Affichage manuel amélioré
+            # Affichage manuel ameliore
             largeurs = {col: min(40, max(len(col), max((len(str(obj.get(col, ""))) for obj in objets_affiches), default=0))) for col in colonnes}
             ligne_entete = "│ " + " │ ".join(f"{COLOR_MAGENTA}{col.upper():<{largeurs[col]}}{COLOR_RESET}" for col in colonnes) + " │"
             separateur = "├" + "─" * (len(ligne_entete) - 2) + "┤"
@@ -207,31 +207,31 @@ def afficher_tableau(objets_fusionnés, sections_demandées, max_lignes=50):
                 print(f"{COLOR_YELLOW}Pour un affichage optimal, installez 'tabulate' (pip install tabulate).{COLOR_RESET}")
 
         if len(objets) > max_lignes:
-            print(f"{COLOR_YELLOW}... ({len(objets) - max_lignes} objets non affichés){COLOR_RESET}")
+            print(f"{COLOR_YELLOW}... ({len(objets) - max_lignes} objets non affiches){COLOR_RESET}")
 
 # Fonction principale
 def main():
-    """Point d’entrée principal"""
+    """Point d’entree principal"""
     print(f"{COLOR_BLUE}=== Fusion de configurations FortiGate ==={COLOR_RESET}")
-    sections_demandées = demander_sections()
+    sections_demandees = demander_sections()
 
     print(f"\nLecture de '{FICHIER_CONF_1}'...")
-    objets_conf_1 = lire_sections_fortigate(FICHIER_CONF_1, sections_demandées)
+    objets_conf_1 = lire_sections_fortigate(FICHIER_CONF_1, sections_demandees)
 
     print(f"\nLecture de '{FICHIER_CONF_2}'...")
-    objets_conf_2 = lire_sections_fortigate(FICHIER_CONF_2, sections_demandées)
+    objets_conf_2 = lire_sections_fortigate(FICHIER_CONF_2, sections_demandees)
 
     print("\nFusion des objets...")
-    objets_fusionnés, doublons = fusionner_sections(objets_conf_1, objets_conf_2)
+    objets_fusionnes, doublons = fusionner_sections(objets_conf_1, objets_conf_2)
 
-    print("\nÉcriture du fichier fusionné...")
-    ecrire_sections_fortigate(FICHIER_FUSIONNE, objets_fusionnés)
+    print("\necriture du fichier fusionne...")
+    ecrire_sections_fortigate(FICHIER_FUSIONNE, objets_fusionnes)
 
-    print(f"\n{COLOR_GREEN} ✔ Fusion terminée. Résultat :{COLOR_RESET}")
-    for section in sections_demandées:
+    print(f"\n{COLOR_GREEN} ✔ Fusion terminee. Resultat :{COLOR_RESET}")
+    for section in sections_demandees:
         count_1 = len(objets_conf_1.get(section, []))
         count_2 = len(objets_conf_2.get(section, []))
-        count_fusion = len(objets_fusionnés.get(section, []))
+        count_fusion = len(objets_fusionnes.get(section, []))
         nb_communs = len(doublons.get(section, []))
         total_uniques = len(set([obj['name'] for obj in objets_conf_1.get(section, [])] +
                                 [obj['name'] for obj in objets_conf_2.get(section, [])]))
@@ -240,10 +240,10 @@ def main():
               f"({COLOR_MAGENTA}{percent_communs:.1f}%{COLOR_RESET} en commun, "
               f"{COLOR_GREEN}{count_1}{COLOR_RESET} conf_1, {COLOR_GREEN}{count_2}{COLOR_RESET} conf_2)")
 
-    # Demander à l'utilisateur s'il veut afficher la liste fusionnée en format tableau
-    afficher = input(f"\nVoulez-vous afficher la liste fusionnée au format tableau ? (o/n) : ").strip().lower()
+    # Demander à l'utilisateur s'il veut afficher la liste fusionnee en format tableau
+    afficher = input(f"\nVoulez-vous afficher la liste fusionnee au format tableau ? (o/n) : ").strip().lower()
     if afficher == "o":
-        afficher_tableau(objets_fusionnés, sections_demandées)
+        afficher_tableau(objets_fusionnes, sections_demandees)
 
 if __name__ == "__main__":
     main()
